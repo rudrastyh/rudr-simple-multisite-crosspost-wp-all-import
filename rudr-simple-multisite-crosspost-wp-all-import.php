@@ -5,7 +5,7 @@
  * Author URI: https://rudrastyh.com
  * Description: Allows to automatically crosspost posts when running the import in WP All Import
  * Plugin URI: https://rudrastyh.com/support/wp-all-import-crossposting
- * Version: 1.0
+ * Version: 1.1
  * Network: true
  */
 
@@ -33,7 +33,19 @@ add_action( 'pmxi_saved_post', function( $post_id, $xml_node, $is_update ) {
 		$c = new Rudr_Simple_Multisite_Crosspost();
 	}
 
-	$blog_ids = $c->get_blog_ids_for_object( $post_id );
+	$blog_ids = array();
+	if( $c->is_auto_mode() ) {
+		$blog_ids = array_keys( $c->get_blogs() );
+		foreach( $blog_ids as $id ) {
+			update_post_meta( $post_id, "_crosspost_to_{$id}", true );
+		}
+	} else {
+		foreach( array_keys( $c->get_blogs() ) as $id ) {
+			if( true == get_post_meta( $post_id, "_crosspost_to_{$id}", true ) ) {
+				$blog_ids[] = $id;
+			}
+		}
+	}
 
 	if( function_exists( 'wc_get_product' ) && 'product' === $post->post_type ) {
 		$c->crosspost_product( $post_id, $blog_ids );
